@@ -69,7 +69,7 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: "󰌾"
+    text: "󰆧"
     foreground: root.opened ? Color.accent : (root.activeCount > 0 ? Color.accent : (root.bar ? root.bar.barForeground : Color.foreground))
     slotSize: Style.bar.statusSlot
     tooltipText: root.activeCount > 0 ? ("Kasm Workspaces (" + root.activeCount + " active)") : "Kasm Workspaces"

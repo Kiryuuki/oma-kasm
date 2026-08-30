@@ -286,7 +286,7 @@ Panel {
               spacing: Style.space(6)
               Text {
                 textFormat: Text.PlainText
-                text: "󰌾"
+                text: "󰆧"
                 color: Color.accent
                 font.pixelSize: Style.font.title
               }

@@ -38,9 +38,23 @@ A keyboard-driven Kasm Workspaces launcher, active container stream monitor, and
 
 ---
 
-## Configuration
+## Configuration & API Key Setup Guide
 
-Credentials can be configured directly inside the plugin Settings tab, or stored in `~/.config/omarchy/kasm.json`:
+### 1. Create a Developer API Key in Kasm Workspaces
+1. Open your Kasm Workspaces Admin Web UI (e.g. `https://kasm.local` or `https://192.168.100.108`).
+2. Log in as an Administrator.
+3. In the left navigation sidebar, go to **Access Management** -> **Developer API** (or **API Keys**).
+4. Click **Add API Key** (or edit an existing key).
+5. Ensure the following permissions are enabled (or assign the Administrator group):
+   - `get_images`: Allows discovering installed workspace Docker images.
+   - `request_kasm`: Allows provisioning and starting container streaming sessions.
+   - `destroy_kasm`: Allows stopping and deleting active container sessions.
+   - `get_kasms` / `get_user_kasm`: Allows listing currently running streaming sessions.
+   - `get_servers` / `get_zones`: Allows reading Docker agent server CPU and RAM telemetry.
+6. Copy your **API Key** and **API Key Secret**.
+
+### 2. Configure OmaKasm in Omarchy Desktop
+Open the plugin Settings flyout (`4` or `s`), enter your Server URL, API Key, and Secret, then click **Save and Sync Now** (or save directly in `~/.config/omarchy/kasm.json`):
 
 ```json
 {
