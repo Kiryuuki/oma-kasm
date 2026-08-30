@@ -20,6 +20,8 @@ Panel {
 
   property string activeTab: "workspaces" // "workspaces" | "sessions" | "cluster" | "settings"
   property int selectedIndex: 0
+  property string launchingImageId: ""
+  property string deletingKasmId: ""
   property var hubState: ({
     serverOnline: false,
     apiAuthenticated: false,
@@ -158,9 +160,17 @@ Panel {
       id: reqOut
       waitForEnd: true
       onStreamFinished: {
+        root.launchingImageId = ""
         try {
-          var res = JSON.parse(reqOut.text.trim())
-          if (res.kasmUrl) {
+          var lines = reqOut.text.trim().split("\n")
+          var res = null
+          for (var i = lines.length - 1; i >= 0; i--) {
+            var line = lines[i].trim()
+            if (line.startsWith("{") && line.endsWith("}")) {
+              try { res = JSON.parse(line); break } catch (e) {}
+            }
+          }
+          if (res && res.kasmUrl) {
             Qt.openUrlExternally(res.kasmUrl)
             root.close()
           } else if (requestKasmProcess.directFallbackUrl) {
@@ -175,15 +185,27 @@ Panel {
         }
       }
     }
+    onExited: function(code) { root.launchingImageId = "" }
   }
 
   function launchWorkspace(imageId, directUrl) {
+    // 1. If directUrl is an active session, open it directly without requesting new container
+    if (directUrl && directUrl.indexOf("/#/session/") !== -1) {
+      Qt.openUrlExternally(directUrl)
+      root.close()
+      return
+    }
+
+    // 2. If credentials are missing, fallback to web portal
     if (!root.configData.apiKey || !root.configData.apiSecret) {
-      var target = directUrl || (root.configData.baseUrl + "/#/cast/" + imageId)
+      var target = directUrl || (root.configData.baseUrl + "/#/workspaces")
       Qt.openUrlExternally(target)
       root.close()
       return
     }
+
+    // 3. Otherwise provision new container session
+    root.launchingImageId = imageId
     requestKasmProcess.targetImageId = imageId
     requestKasmProcess.directFallbackUrl = directUrl
     requestKasmProcess.running = true
@@ -193,12 +215,18 @@ Panel {
   Process {
     id: destroyKasmProcess
     property string targetKasmId: ""
-    command: ["/usr/bin/python3", (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins/kiryuuki.oma-kasm/kasm_engine.py", "--destroy-kasm", targetKasmId]
-    onExited: function(code) { syncProcess.running = true }
+    property string targetUserId: ""
+    command: ["/usr/bin/python3", (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins/kiryuuki.oma-kasm/kasm_engine.py", "--destroy-kasm", targetKasmId, "--user-id", targetUserId]
+    onExited: function(code) {
+      root.deletingKasmId = ""
+      syncProcess.running = true
+    }
   }
 
-  function destroySession(kasmId) {
+  function destroySession(kasmId, userId) {
+    root.deletingKasmId = kasmId
     destroyKasmProcess.targetKasmId = kasmId
+    destroyKasmProcess.targetUserId = userId || ""
     destroyKasmProcess.running = true
   }
 
@@ -245,7 +273,7 @@ Panel {
         if (root.activeTab === "sessions") {
           var s = root.hubState.sessions || []
           if (s[root.selectedIndex]) {
-            root.destroySession(s[root.selectedIndex].id)
+            root.destroySession(s[root.selectedIndex].id, s[root.selectedIndex].userId)
           }
         }
       }
@@ -258,7 +286,7 @@ Panel {
         else if (t === "x" && root.activeTab === "sessions") {
           var s = root.hubState.sessions || []
           if (s[root.selectedIndex]) {
-            root.destroySession(s[root.selectedIndex].id)
+            root.destroySession(s[root.selectedIndex].id, s[root.selectedIndex].userId)
           }
         }
       }
@@ -402,9 +430,11 @@ Panel {
             visible: root.activeTab === "workspaces"
             width: parent.width
             workspaces: root.hubState.images || []
+            activeSessions: root.hubState.sessions || []
             foreground: root.contentForeground
             fontFamily: root.contentFontFamily
             selectedIndex: root.activeTab === "workspaces" ? root.selectedIndex : -1
+            launchingImageId: root.launchingImageId
             onLaunchRequested: function(id, url) { root.launchWorkspace(id, url) }
           }
 
@@ -415,8 +445,9 @@ Panel {
             foreground: root.contentForeground
             fontFamily: root.contentFontFamily
             selectedIndex: root.activeTab === "sessions" ? root.selectedIndex : -1
+            deletingKasmId: root.deletingKasmId
             onResumeRequested: function(url) { Qt.openUrlExternally(url); root.close() }
-            onDestroyRequested: function(id) { root.destroySession(id) }
+            onDestroyRequested: function(id, uid) { root.destroySession(id, uid) }
           }
 
           ClusterView {

@@ -11,9 +11,10 @@ Item {
   property color foreground: Color.foreground
   property string fontFamily: Style.font.family
   property int selectedIndex: 0
+  property string deletingKasmId: ""
 
   signal resumeRequested(string kasmUrl)
-  signal destroyRequested(string kasmId)
+  signal destroyRequested(string kasmId, string userId)
 
   Column {
     id: sessionsCol
@@ -99,18 +100,51 @@ Item {
             Layout.fillWidth: true
             spacing: 2
 
-            Text {
-              textFormat: Text.PlainText
-              text: sessionCard.modelData.imageName || sessionCard.modelData.id
-              color: root.foreground
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
-              font.bold: true
+            Row {
+              spacing: Style.space(6)
+              Text {
+                textFormat: Text.PlainText
+                text: sessionCard.modelData.imageName || qsTr("Workspace Session")
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                font.bold: true
+              }
+
+              // Persistent Profile indicator badge
+              BorderSurface {
+                visible: !!sessionCard.modelData.hasPersistentProfile
+                implicitHeight: Style.space(16)
+                implicitWidth: sProfText.implicitWidth + Style.space(8)
+                radius: Style.cornerRadius
+                color: Qt.rgba(168/255, 85/255, 247/255, 0.15)
+                borderSpec: Border.controlSpec("normal", "#A855F7", "#A855F7")
+
+                Text {
+                  id: sProfText
+                  textFormat: Text.PlainText
+                  anchors.centerIn: parent
+                  text: "󰋊 " + qsTr("Profile")
+                  color: "#A855F7"
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.micro || 9
+                  font.bold: true
+                }
+              }
+
+              Text {
+                textFormat: Text.PlainText
+                text: sessionCard.modelData.status || "running"
+                color: sessionCard.modelData.status === "running" ? "#10B981" : "#F59E0B"
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
             }
 
             Text {
               textFormat: Text.PlainText
-              text: "Status: " + sessionCard.modelData.status + (sessionCard.modelData.username ? (" · User: " + sessionCard.modelData.username) : "")
+              text: (sessionCard.modelData.username ? ("User: " + sessionCard.modelData.username) : "") + (sessionCard.modelData.serverHostname ? (" · Node: " + sessionCard.modelData.serverHostname) : "")
               color: Qt.darker(root.foreground, 1.8)
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
@@ -144,24 +178,26 @@ Item {
 
           // Destroy / Terminate Button
           BorderSurface {
+            readonly property bool isDeletingThis: root.deletingKasmId !== "" && root.deletingKasmId === sessionCard.modelData.id
             implicitWidth: Style.space(28)
             implicitHeight: Style.space(28)
             radius: Style.cornerRadius
-            color: "transparent"
+            color: isDeletingThis ? Qt.rgba(239/255, 68/255, 68/255, 0.2) : "transparent"
             borderSpec: Border.controlSpec("normal", "#EF4444", Color.accent)
 
             Text {
               textFormat: Text.PlainText
               anchors.centerIn: parent
-              text: "󰆴"
+              text: parent.isDeletingThis ? "" : "󰆴"
               color: "#EF4444"
               font.pixelSize: Style.font.caption
             }
 
             MouseArea {
               anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.destroyRequested(sessionCard.modelData.id)
+              enabled: !parent.isDeletingThis
+              cursorShape: parent.isDeletingThis ? Qt.ArrowCursor : Qt.PointingHandCursor
+              onClicked: root.destroyRequested(sessionCard.modelData.id, sessionCard.modelData.userId || "")
             }
           }
         }
