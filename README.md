@@ -2,7 +2,7 @@
 
 A keyboard-driven Kasm Workspaces launcher, active container stream monitor, and agent cluster telemetry flyout for the Omarchy Desktop Environment.
 
-![OmaKasm Preview](assets/preview.png)
+![OmaKasm Preview](preview.png)
 
 ---
 
