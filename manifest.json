@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "kiryuuki.oma-kasm",
+  "name": "OmaKasm",
+  "version": "1.0.0",
+  "author": "Kiryuuki",
+  "license": "Source-Available Non-Commercial (PolyForm-Noncommercial-1.0.0)",
+  "description": "Kasm Workspaces Launcher and Active Session Manager for Omarchy Desktop. 1-click workspace provisioning, live session streaming, and agent cluster telemetry.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaKasm",
+    "description": "Kasm Workspaces launcher and container session manager",
+    "category": "Tools",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
