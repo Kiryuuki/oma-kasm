@@ -129,8 +129,19 @@ Panel {
       defaultClipboard: root.configData.defaultClipboard !== false,
       launchMode: "browser"
     }
-    configFile.setText(JSON.stringify(cfg, null, 2) + "\n")
     testProcess.running = true
+    testProcess.stdin.write(JSON.stringify(cfg) + "\n")
+    testProcess.stdin.close()
+  }
+
+  // Process: Save Config (0600 mode)
+  Process {
+    id: saveKasmConfigProcess
+    command: ["/usr/bin/python3", (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins/kiryuuki.oma-kasm/kasm_engine.py", "--save-config"]
+    onExited: function(code) {
+      configFile.reload()
+      syncProcess.running = true
+    }
   }
 
   function saveConfig(url, key, secret, audio, mic, clip) {
@@ -144,8 +155,9 @@ Panel {
       defaultClipboard: clip,
       launchMode: "browser"
     }
-    configFile.setText(JSON.stringify(cfg, null, 2) + "\n")
-    syncProcess.running = true
+    saveKasmConfigProcess.running = true
+    saveKasmConfigProcess.stdin.write(JSON.stringify(cfg) + "\n")
+    saveKasmConfigProcess.stdin.close()
     root.saveSuccess = true
     saveNoticeTimer.restart()
   }
